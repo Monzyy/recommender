@@ -47,7 +47,7 @@ def _load_base(path, model, model_index_mapping):
 def load_movies(path):
     # Mapping from Movie attributes to their index and type.
     movies_index_mapping = {
-        'id': {
+        'tmdb_id': {
             'index': 5,
             'parse_func': int
         },

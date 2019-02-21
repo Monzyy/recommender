@@ -10,6 +10,7 @@ class Movie(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String)
     summary = Column(String)
+    tmdb_id = Column(Integer)
     # TODO: Add more attributes
 
     ratings = relationship('Rating', back_populates='movie')
