@@ -1,40 +1,46 @@
 import csv
 from datetime import datetime
 
-from sqlalchemy.orm import sessionmaker
-
-from ..database import engine
+from ..database import get_session
 from ..models import Movie, Rating
+
+COMMIT_SIZE = 100000
 
 
 def _load_base(path, model, model_index_mapping):
-    Session = sessionmaker(bind=engine)
-    sess = Session()
+    def add_instance(line, model_index_mapping, session):
+        # Using model_index_mapping create a dict of (attribute, value) pairs, where the attribute is the
+        # models attribute and the value is the parsed value from the input file.
+        params = {attribute: val['parse_func'](line[val['index']])
+                  for attribute, val in model_index_mapping.items()}
+        session.add(model(**params))
+
+    sess = get_session()
 
     with open(path) as csvfile:
         reader = csv.reader(csvfile)
         next(reader)  # Remove header
-        model_instances = []
         unique_ids = []
+        id = None
 
-        for line in reader:
-            id = None
+        for i, line in enumerate(reader):
             try:
                 if 'id' in model_index_mapping:
                     id = int(line[model_index_mapping['id']['index']])
 
-                if id is None or id not in unique_ids:
+                if id is None:
+                    add_instance(line, model_index_mapping, sess)
+                elif id not in unique_ids:
                     # There exists duplicate entries. Avoid these by adding ids to a list.
                     unique_ids.append(id)
+                    add_instance(line, model_index_mapping, sess)
 
-                    # Using model_index_mapping create a dict of (attribute, value) pairs, where the attribute is the
-                    # models attribute and the value is the parsed value from the input file.
-                    params = {attribute: val['parse_func'](line[val['index']])
-                              for attribute, val in model_index_mapping.items()}
-                    model_instances.append(model(**params))
+                if (i + 1) % COMMIT_SIZE == 0:  # Commit every after 100k instances
+                    print(f'Commiting {COMMIT_SIZE} instances of {model}. Total committed: {i+1}')
+                    sess.commit()
             except (IndexError, ValueError):
                 pass
-        sess.add_all(model_instances)
+
         sess.commit()
 
 
