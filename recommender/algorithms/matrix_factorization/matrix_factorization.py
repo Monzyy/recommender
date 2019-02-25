@@ -10,7 +10,7 @@ class MatrixFactorization: # TODO: it needs to be stochastic, or at least kinda
         P = np.random.rand(n_users, n_latent_factors)
         Q = np.random.rand(n_latent_factors, n_items)
 
-        for i in range(0, steps):
+        for i in range(0, steps):   
             pred = self._compute_prediction(P, Q)
             error = self._compute_error(ratings, pred)
             grad_p, grad_q = self._compute_gradients(error, P, Q, beta)
@@ -25,8 +25,11 @@ class MatrixFactorization: # TODO: it needs to be stochastic, or at least kinda
         return P, Q
 
     def _compute_gradients(self, error, P, Q, beta):
-        delta_p = 2*error*P-beta*Q
-        delta_q = 2*error*Q-beta*P
+        # delta_p = 2*error*P-beta*Q
+        # delta_q = 2*error*Q-beta*P
+        delta_p = -2*error*P
+        delta_q = -2*error*Q
+        
 
         return delta_p, delta_q
 
@@ -34,7 +37,8 @@ class MatrixFactorization: # TODO: it needs to be stochastic, or at least kinda
         return np.dot(P, Q)
 
     def _compute_error(self, ratings, pred):
-        return np.square(ratings-pred).mean()
+        return np.square(ratings-pred)
+        # return np.square(ratings-pred).mean()
 
 
 if __name__ == "__main__":
