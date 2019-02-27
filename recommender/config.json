@@ -1,0 +1,11 @@
+{
+  "LOCAL": {
+    "DB_CONNECTION": "sqlite:///database.sqlite3"
+  },
+  "PG_LOCAL": {
+    "DB_CONNECTION": "postgresql://monsexy:sprekkeren@localhost/postgres"
+  },
+  "PRODUCTION": {
+    "DB_CONNECTION": "postgresql://monsexy:sprekkeren@172.28.210.95/postgres"
+  }
+}

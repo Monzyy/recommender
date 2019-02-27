@@ -2,7 +2,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-engine = create_engine('sqlite:///database.sqlite3', echo=False)  # TODO: Use remote database
+from config import settings
+
+engine = create_engine(settings['DB_CONNECTION'], echo=False)
 
 Base = declarative_base()
 
