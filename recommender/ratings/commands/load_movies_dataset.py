@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 
+import dateutil
 import pandas as pd
 
 from ..database import get_session
@@ -60,6 +61,46 @@ def load_movies(path):
         'budget': {
             'index': 3,
             'parse_func': int
+        },
+        'adult': {
+            'index': 4,
+            'parse_func': _str_to_bool
+        },
+        'original_language': {
+            'index': 5,
+            'parse_func': str
+        },
+        'original_title': {
+            'index': 6,
+            'parse_func': str
+        },
+        'poster_path': {
+            'index': 7,
+            'parse_func': str
+        },
+        'release_date': {
+            'index': 8,
+            'parse_func': _str_to_date
+        },
+        'revenue': {
+            'index': 9,
+            'parse_func': _float_str_to_int
+        },
+        'runtime': {
+            'index': 10,
+            'parse_func': _float_str_to_int
+        },
+        'status': {
+            'index': 11,
+            'parse_func': str
+        },
+        'tagline': {
+            'index': 12,
+            'parse_func': str
+        },
+        'video': {
+            'index': 13,
+            'parse_func': _str_to_bool
         }
     }
     _load_base(path, Movie, movies_index_mapping)
@@ -67,7 +108,6 @@ def load_movies(path):
 
 def load_ratings(path):
     # Mapping from Rating attributes to their index and type.
-
     movie_ids = _get_movie_ids(get_session())
     ratings_index_mapping = {
         'user_id': {
@@ -86,7 +126,7 @@ def load_ratings(path):
         },
         'created_at': {
             'index': 3,
-            'parse_func': _str_to_datetime
+            'parse_func': _unix_timestamp_to_datetime
         }
     }
 
@@ -111,19 +151,21 @@ def preprocess_movies(movie_in_path, movie_out_path, link_path):
     # links to DataFrame
     links = pd.read_csv(link_path)
     links = links[['movieId', 'tmdbId']]
-    links.tmdbId = links.tmdbId.fillna(0).astype(int)
+    links = links.dropna()
 
     # movies to DataFrame
     movies = pd.read_csv(movie_out_path)
 
     # strip away useless columns
-    movies = movies[['id', 'original_title', 'overview', 'budget']]
+    movies = movies[['id', 'title', 'overview', 'budget', 'adult', 'original_language', 'original_title',
+                     'poster_path', 'release_date', 'revenue', 'runtime', 'status', 'tagline', 'video']]
 
     # merge links and movies
     joined = links.merge(movies, left_on='tmdbId', right_on='id', how='left').drop(['tmdbId', 'id'], axis=1)
 
     # rename columns
-    joined.columns = ['id', 'title', 'summary', 'budget']
+    joined.columns = ['id', 'title', 'summary', 'budget', 'adult', 'original_language', 'original_title',
+                      'poster_path', 'release_date', 'revenue', 'runtime', 'status', 'tagline', 'video']
 
     # set budget to int
     joined.budget = joined.budget.fillna(0).astype(int)
@@ -139,5 +181,21 @@ def _get_movie_ids(session):
     return [res[0] for res in session.query(Movie.id).all()]
 
 
-def _str_to_datetime(string):
+def _str_to_date(string):
+    if string:
+        return dateutil.parser.parse(string).date()
+    return None
+
+
+def _unix_timestamp_to_datetime(string):
     return datetime.utcfromtimestamp(int(string))
+
+
+def _float_str_to_int(string):
+    if string:
+        return int(float(string))
+    return None
+
+
+def _str_to_bool(string):
+    return string.lower() == 'true'

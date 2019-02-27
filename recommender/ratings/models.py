@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -11,7 +11,16 @@ class Movie(Base):
     title = Column(String)
     summary = Column(String)
     budget = Column(Integer)
-    # TODO: Add more attributes
+    adult = Column(Boolean)
+    original_language = Column(String)
+    original_title = Column(String)
+    poster_path = Column(String)
+    release_date = Column(Date)
+    revenue = Column(BigInteger)
+    runtime = Column(Integer)
+    status = Column(String)
+    tagline = Column(String)
+    video = Column(Boolean)
 
     ratings = relationship('Rating', back_populates='movie', cascade='all, delete-orphan')
 
