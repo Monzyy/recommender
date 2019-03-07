@@ -12,16 +12,25 @@ def load_dataset(args):
     from ratings.database import init_db
     from ratings.commands.load_movies_dataset import load_movies, load_ratings, preprocess_movies
 
+    # Ask for confirmation
     answer = input('Loading the dataset will clear the current database.\nDo you want to continue? [y/N]')
     if answer.lower() != 'y':
         print('Abort.')
         return
+
     dir = args.dir if args.dir else BASE_DIR + '/the-movies-dataset'
     init_db()
+
     cleaned_movies_path = dir + '/cleaned_movies_metadata.csv'
     preprocess_movies(dir + '/movies_metadata.csv', cleaned_movies_path, dir + '/links.csv')
+
     load_movies(cleaned_movies_path)
-    load_ratings(dir + '/ratings.csv')
+
+    # Load ratings
+    if args.small_dataset:
+        load_ratings(dir + '/ratings_small.csv')
+    else:
+        load_ratings(dir + '/ratings.csv')
 
 
 if __name__ == '__main__':

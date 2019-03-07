@@ -1,11 +1,12 @@
 import csv
+import json
 from datetime import datetime
 
 import dateutil
 import pandas as pd
 
 from ..database import get_session
-from ..models import Movie, Rating
+from ..models import Genre, Movie, Rating
 
 COMMIT_SIZE = 100000
 
@@ -19,8 +20,27 @@ def _load_base(path, model, model_index_mapping):
 
         # Using model_index_mapping create a dict of (attribute, value) pairs, where the attribute is the
         # models attribute and the value is the parsed value from the input file.
-        params = {attribute: val['parse_func'](line[val['index']]) for attribute, val in model_index_mapping.items()}
-        session.add(model(**params))
+        params = {attribute: val['parse_func'](line[val['index']])
+                  for attribute, val in model_index_mapping.items() if 'association_to' not in val}
+        instance = model(**params)
+        session.add(instance)
+
+        # Associations
+        for attribute, val in model_index_mapping.items():
+            association_to_instances = []
+            if 'association_to' in val:
+                associations = val['parse_func'](line[val['index']])
+                for association in associations:
+
+                    # Create or get association
+                    if not session.query(val['association_to']).filter_by(**association).first():
+                        association_to_instances.append(val['association_to'](**association))
+                    else:
+                        association_to_instances.append(
+                            session.query(val['association_to']).filter_by(**association).first())
+
+                # Add associative links
+                val['add_association_func'](instance, association_to_instances)
 
     sess = get_session()
 
@@ -101,6 +121,12 @@ def load_movies(path):
         'video': {
             'index': 13,
             'parse_func': _str_to_bool
+        },
+        'genres': {
+            'index': 14,
+            'parse_func': _parse_json_str,
+            'association_to': Genre,
+            'add_association_func': _add_genres_to_movie,
         }
     }
     _load_base(path, Movie, movies_index_mapping)
@@ -158,19 +184,20 @@ def preprocess_movies(movie_in_path, movie_out_path, link_path):
 
     # strip away useless columns
     movies = movies[['id', 'title', 'overview', 'budget', 'adult', 'original_language', 'original_title',
-                     'poster_path', 'release_date', 'revenue', 'runtime', 'status', 'tagline', 'video']]
+                     'poster_path', 'release_date', 'revenue', 'runtime', 'status', 'tagline', 'video', 'genres']]
 
     # merge links and movies
     joined = links.merge(movies, left_on='tmdbId', right_on='id', how='left').drop(['tmdbId', 'id'], axis=1)
 
     # rename columns
     joined.columns = ['id', 'title', 'summary', 'budget', 'adult', 'original_language', 'original_title',
-                      'poster_path', 'release_date', 'revenue', 'runtime', 'status', 'tagline', 'video']
+                      'poster_path', 'release_date', 'revenue', 'runtime', 'status', 'tagline', 'video', 'genres']
 
     # set budget to int
     joined.budget = joined.budget.fillna(0).astype(int)
 
     # remove duplicates
+    joined = joined.dropna()
     joined = joined.drop_duplicates('id')
 
     # write back to disk
@@ -199,3 +226,12 @@ def _float_str_to_int(string):
 
 def _str_to_bool(string):
     return string.lower() == 'true'
+
+
+def _parse_json_str(string):
+    string = string.replace("'", '"')
+    return json.loads(string)
+
+
+def _add_genres_to_movie(movie_instance, genre_instances):
+    movie_instance.genres.extend(genre_instances)

@@ -1,8 +1,12 @@
 from sqlalchemy import (BigInteger, Boolean, Column, Date, DateTime, Float,
-                        ForeignKey, Integer, String)
+                        ForeignKey, Integer, String, Table)
 from sqlalchemy.orm import relationship
 
 from .database import Base
+
+movie_has_genre_table = Table('movie_has_genre', Base.metadata,
+                              Column('movie_id', Integer, ForeignKey('movies.id')),
+                              Column('genre_id', Integer, ForeignKey('genres.id')))
 
 
 class Movie(Base):
@@ -24,6 +28,7 @@ class Movie(Base):
     video = Column(Boolean)
 
     ratings = relationship('Rating', back_populates='movie', cascade='all, delete-orphan')
+    genres = relationship('Genre', secondary=movie_has_genre_table)
 
 
 class Rating(Base):
@@ -36,3 +41,10 @@ class Rating(Base):
     movie_id = Column(Integer, ForeignKey('movies.id'))
 
     movie = relationship('Movie', back_populates='ratings')
+
+
+class Genre(Base):
+    __tablename__ = 'genres'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
