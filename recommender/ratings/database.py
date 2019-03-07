@@ -11,7 +11,7 @@ Base = declarative_base()
 
 def init_db():
     # Import models here so the metadata gets registered.
-    from .models import Movie, Rating  # noqa
+    from .models import Genre, Movie, Rating, ProductionCompany  # noqa
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 

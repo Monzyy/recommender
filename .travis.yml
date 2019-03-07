@@ -8,4 +8,4 @@ install:
 
 script:
     - isort -rc -cs -s migrations --diff --check-only recommender
-    - flake8 --exclude=migrations --max-line-length 119 recommender
+    - flake8 --exclude=migrations --max-complexity 12 --max-line-length 119 recommender

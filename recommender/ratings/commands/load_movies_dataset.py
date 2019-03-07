@@ -3,12 +3,13 @@ import json
 from datetime import datetime
 
 import dateutil
-import pandas as pd
 
 from ..database import get_session
-from ..models import Genre, Movie, Rating
+from ..models import Genre, Movie, ProductionCompany, Rating
 
 COMMIT_SIZE = 100000
+
+ASSOCIATION_CACHE = {'genres': {}, 'production_companies': {}}
 
 
 def _load_base(path, model, model_index_mapping):
@@ -33,11 +34,13 @@ def _load_base(path, model, model_index_mapping):
                 for association in associations:
 
                     # Create or get association
-                    if not session.query(val['association_to']).filter_by(**association).first():
-                        association_to_instances.append(val['association_to'](**association))
+                    exists = True if association['id'] in ASSOCIATION_CACHE[attribute] else False
+                    if not exists:
+                        associon_to_instance = val['association_to'](**association)
+                        ASSOCIATION_CACHE[attribute][association['id']] = associon_to_instance
+                        association_to_instances.append(associon_to_instance)
                     else:
-                        association_to_instances.append(
-                            session.query(val['association_to']).filter_by(**association).first())
+                        association_to_instances.append(ASSOCIATION_CACHE[attribute][association['id']])
 
                 # Add associative links
                 val['add_association_func'](instance, association_to_instances)
@@ -127,6 +130,12 @@ def load_movies(path):
             'parse_func': _parse_json_str,
             'association_to': Genre,
             'add_association_func': _add_genres_to_movie,
+        },
+        'production_companies': {
+            'index': 15,
+            'parse_func': _parse_json_str,
+            'association_to': ProductionCompany,
+            'add_association_func': _add_production_companies_to_movie
         }
     }
     _load_base(path, Movie, movies_index_mapping)
@@ -159,51 +168,6 @@ def load_ratings(path):
     _load_base(path, Rating, ratings_index_mapping)
 
 
-def preprocess_movies(movie_in_path, movie_out_path, link_path):
-    # Strip newlines in movies summaries, so each newline corresponds to one item.
-    with open(movie_in_path, 'r') as input:
-        with open(movie_out_path, 'w') as output:
-            output.write(next(input))  # write header
-            prev_line = next(input)
-            for line in input:
-                if line.startswith('False,') or line.startswith('True,'):
-                    output.write(prev_line)
-                    prev_line = line
-                else:
-                    # remove newline character at the end of the last line and append the new line
-                    prev_line = prev_line[:-1] + line
-            output.write(prev_line)  # write last line
-
-    # links to DataFrame
-    links = pd.read_csv(link_path)
-    links = links[['movieId', 'tmdbId']]
-    links = links.dropna()
-
-    # movies to DataFrame
-    movies = pd.read_csv(movie_out_path)
-
-    # strip away useless columns
-    movies = movies[['id', 'title', 'overview', 'budget', 'adult', 'original_language', 'original_title',
-                     'poster_path', 'release_date', 'revenue', 'runtime', 'status', 'tagline', 'video', 'genres']]
-
-    # merge links and movies
-    joined = links.merge(movies, left_on='tmdbId', right_on='id', how='left').drop(['tmdbId', 'id'], axis=1)
-
-    # rename columns
-    joined.columns = ['id', 'title', 'summary', 'budget', 'adult', 'original_language', 'original_title',
-                      'poster_path', 'release_date', 'revenue', 'runtime', 'status', 'tagline', 'video', 'genres']
-
-    # set budget to int
-    joined.budget = joined.budget.fillna(0).astype(int)
-
-    # remove duplicates
-    joined = joined.dropna()
-    joined = joined.drop_duplicates('id')
-
-    # write back to disk
-    joined.to_csv(movie_out_path, index=False)
-
-
 def _get_movie_ids(session):
     return [res[0] for res in session.query(Movie.id).all()]
 
@@ -230,8 +194,13 @@ def _str_to_bool(string):
 
 def _parse_json_str(string):
     string = string.replace("'", '"')
+    string = string.replace('\\xa0', ' ')
     return json.loads(string)
 
 
 def _add_genres_to_movie(movie_instance, genre_instances):
     movie_instance.genres.extend(genre_instances)
+
+
+def _add_production_companies_to_movie(movie_instance, production_company_instances):
+    movie_instance.production_companies.extend(production_company_instances)

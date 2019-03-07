@@ -10,7 +10,8 @@ BASE_DIR = os.path.dirname(PROJECT_ROOT)
 def load_dataset(args):
     # Import after the configurations are set.
     from ratings.database import init_db
-    from ratings.commands.load_movies_dataset import load_movies, load_ratings, preprocess_movies
+    from ratings.commands.load_movies_dataset import load_movies, load_ratings
+    from ratings.commands.preprocessing import preprocess_movies
 
     # Ask for confirmation
     answer = input('Loading the dataset will clear the current database.\nDo you want to continue? [y/N]')
