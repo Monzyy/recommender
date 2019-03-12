@@ -5,11 +5,13 @@ from datetime import datetime
 import dateutil
 
 from ..database import get_session
-from ..models import Genre, Movie, ProductionCompany, Rating
+from ..models import (Genre, Movie, ProductionCompany, ProductionCountry,
+                      Rating, SpokenLanguage)
 
 COMMIT_SIZE = 100000
-
-ASSOCIATION_CACHE = {'genres': {}, 'production_companies': {}}
+ASSOCIATION_CACHE = {'genres': {}, 'production_companies': {}, 'production_countries': {}, 'spoken_languages': {}}
+COUNTRY_IDS = {}
+SPOKEN_LANGUAGE_IDS = {}
 
 
 def _load_base(path, model, model_index_mapping):
@@ -136,6 +138,18 @@ def load_movies(path):
             'parse_func': _parse_json_str,
             'association_to': ProductionCompany,
             'add_association_func': _add_production_companies_to_movie
+        },
+        'production_countries': {
+            'index': 16,
+            'parse_func': _parse_production_countries,
+            'association_to': ProductionCountry,
+            'add_association_func': _add_production_countries_to_movie
+        },
+        'spoken_languages': {
+            'index': 17,
+            'parse_func': _parse_spoken_languages,
+            'association_to': SpokenLanguage,
+            'add_association_func': _add_spoken_languages_to_movie
         }
     }
     _load_base(path, Movie, movies_index_mapping)
@@ -198,9 +212,35 @@ def _parse_json_str(string):
     return json.loads(string)
 
 
+def _create_id_from_feature(items, feature_name, feature_id_list):
+    for item in items:
+        if item[feature_name] not in feature_id_list:
+            feature_id_list[item[feature_name]] = len(feature_id_list)
+        item['id'] = feature_id_list[item[feature_name]]
+    return items
+
+
+def _parse_production_countries(string):
+    countries = _parse_json_str(string)
+    return _create_id_from_feature(countries, 'iso_3166_1', COUNTRY_IDS)
+
+
+def _parse_spoken_languages(string):
+    languages = _parse_json_str(string)
+    return _create_id_from_feature(languages, 'iso_639_1', SPOKEN_LANGUAGE_IDS)
+
+
 def _add_genres_to_movie(movie_instance, genre_instances):
     movie_instance.genres.extend(genre_instances)
 
 
 def _add_production_companies_to_movie(movie_instance, production_company_instances):
     movie_instance.production_companies.extend(production_company_instances)
+
+
+def _add_production_countries_to_movie(movie_instance, production_country_instances):
+    movie_instance.production_countries.extend(production_country_instances)
+
+
+def _add_spoken_languages_to_movie(movie_instance, spoken_language_instances):
+    movie_instance.spoken_languages.extend(spoken_language_instances)

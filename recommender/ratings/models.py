@@ -12,6 +12,14 @@ movie_has_production_company = Table('movie_has_production_company', Base.metada
                                      Column('movie_id', Integer, ForeignKey('movies.id')),
                                      Column('production_company_id', Integer, ForeignKey('production_companies.id')))
 
+movie_has_production_country = Table('movie_has_production_country', Base.metadata,
+                                     Column('movie_id', Integer, ForeignKey('movies.id')),
+                                     Column('production_country_id', Integer, ForeignKey('production_countries.id')))
+
+movie_has_spoken_language = Table('movie_has_spoken_language', Base.metadata,
+                                  Column('movie_id', Integer, ForeignKey('movies.id')),
+                                  Column('spoken_language_id', Integer, ForeignKey('spoken_languages.id')))
+
 
 class Movie(Base):
     __tablename__ = 'movies'
@@ -34,6 +42,8 @@ class Movie(Base):
     ratings = relationship('Rating', back_populates='movie', cascade='all, delete-orphan')
     genres = relationship('Genre', secondary=movie_has_genre_table)
     production_companies = relationship('ProductionCompany', secondary=movie_has_production_company)
+    production_countries = relationship('ProductionCountry', secondary=movie_has_production_country)
+    spoken_languages = relationship('SpokenLanguage', secondary=movie_has_spoken_language)
 
 
 class Rating(Base):
@@ -59,4 +69,20 @@ class ProductionCompany(Base):
     __tablename__ = 'production_companies'
 
     id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+
+class ProductionCountry(Base):
+    __tablename__ = 'production_countries'
+
+    id = Column(Integer, primary_key=True)
+    iso_3166_1 = Column(String)
+    name = Column(String)
+
+
+class SpokenLanguage(Base):
+    __tablename__ = 'spoken_languages'
+
+    id = Column(Integer, primary_key=True)
+    iso_639_1 = Column(String)
     name = Column(String)

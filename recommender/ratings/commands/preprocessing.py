@@ -27,7 +27,7 @@ def preprocess_movies(movie_in_path, movie_out_path, link_path):
     # strip away useless columns
     movies = movies[['id', 'title', 'overview', 'budget', 'adult', 'original_language', 'original_title',
                      'poster_path', 'release_date', 'revenue', 'runtime', 'status', 'tagline', 'video', 'genres',
-                     'production_companies']]
+                     'production_companies', 'production_countries', 'spoken_languages']]
 
     movies['production_companies'] = movies['production_companies'].apply(lambda x: _parse_json_str(x))
 
@@ -37,7 +37,7 @@ def preprocess_movies(movie_in_path, movie_out_path, link_path):
     # rename columns
     joined.columns = ['id', 'title', 'summary', 'budget', 'adult', 'original_language', 'original_title',
                       'poster_path', 'release_date', 'revenue', 'runtime', 'status', 'tagline', 'video', 'genres',
-                      'production_companies']
+                      'production_companies', 'production_countries', 'spoken_languages']
 
     # set budget to int
     joined.budget = joined.budget.fillna(0).astype(int)
