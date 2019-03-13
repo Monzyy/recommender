@@ -23,7 +23,7 @@ def load_dataset(args):
     init_db()
 
     cleaned_movies_path = dir + '/cleaned_movies_metadata.csv'
-    preprocess_movies(dir + '/movies_metadata.csv', cleaned_movies_path, dir + '/links.csv')
+    preprocess_movies(dir + '/movies_metadata.csv', cleaned_movies_path, dir + '/links.csv', dir + '/credits.csv')
 
     load_movies(cleaned_movies_path)
 

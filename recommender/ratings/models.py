@@ -20,6 +20,14 @@ movie_has_spoken_language = Table('movie_has_spoken_language', Base.metadata,
                                   Column('movie_id', Integer, ForeignKey('movies.id')),
                                   Column('spoken_language_id', Integer, ForeignKey('spoken_languages.id')))
 
+movie_has_actor = Table('movie_has_actor', Base.metadata,
+                        Column('movie_id', Integer, ForeignKey('movies.id')),
+                        Column('actor_id', Integer, ForeignKey('actors.id')))
+
+movie_has_crew_member = Table('movie_has_crew_member', Base.metadata,
+                              Column('movie_id', Integer, ForeignKey('movies.id')),
+                              Column('crew_member_id', Integer, ForeignKey('crew_members.id')))
+
 
 class Movie(Base):
     __tablename__ = 'movies'
@@ -44,6 +52,8 @@ class Movie(Base):
     production_companies = relationship('ProductionCompany', secondary=movie_has_production_company)
     production_countries = relationship('ProductionCountry', secondary=movie_has_production_country)
     spoken_languages = relationship('SpokenLanguage', secondary=movie_has_spoken_language)
+    actors = relationship('Actor', secondary=movie_has_actor)
+    crew_members = relationship('CrewMember', secondary=movie_has_crew_member)
 
 
 class Rating(Base):
@@ -86,3 +96,28 @@ class SpokenLanguage(Base):
     id = Column(Integer, primary_key=True)
     iso_639_1 = Column(String)
     name = Column(String)
+
+
+class Actor(Base):
+    __tablename__ = 'actors'
+
+    id = Column(Integer, primary_key=True)
+    cast_id = Column(Integer)
+    character = Column(String)
+    credit_id = Column(String)
+    gender = Column(Integer)
+    name = Column(String)
+    order = Column(Integer)
+    profile_path = Column(String)
+
+
+class CrewMember(Base):
+    __tablename__ = 'crew_members'
+
+    id = Column(Integer, primary_key=True)
+    credit_id = Column(String)
+    department = Column(String)
+    gender = Column(Integer)
+    job = Column(String)
+    name = Column(String)
+    profile_path = Column(String)

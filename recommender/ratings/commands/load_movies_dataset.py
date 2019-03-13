@@ -5,11 +5,12 @@ from datetime import datetime
 import dateutil
 
 from ..database import get_session
-from ..models import (Genre, Movie, ProductionCompany, ProductionCountry,
-                      Rating, SpokenLanguage)
+from ..models import (Actor, CrewMember, Genre, Movie, ProductionCompany,
+                      ProductionCountry, Rating, SpokenLanguage)
 
 COMMIT_SIZE = 100000
-ASSOCIATION_CACHE = {'genres': {}, 'production_companies': {}, 'production_countries': {}, 'spoken_languages': {}}
+ASSOCIATION_CACHE = {'genres': {}, 'production_companies': {}, 'production_countries': {},
+                     'spoken_languages': {}, 'actors': {}, 'crew_members': {}}
 COUNTRY_IDS = {}
 SPOKEN_LANGUAGE_IDS = {}
 
@@ -150,6 +151,18 @@ def load_movies(path):
             'parse_func': _parse_spoken_languages,
             'association_to': SpokenLanguage,
             'add_association_func': _add_spoken_languages_to_movie
+        },
+        'actors': {
+            'index': 18,
+            'parse_func': _parse_json_str,
+            'association_to': Actor,
+            'add_association_func': _add_actors_to_movie
+        },
+        'crew_members': {
+            'index': 19,
+            'parse_func': _parse_json_str,
+            'association_to': CrewMember,
+            'add_association_func': _add_crew_members_to_movie
         }
     }
     _load_base(path, Movie, movies_index_mapping)
@@ -207,9 +220,13 @@ def _str_to_bool(string):
 
 
 def _parse_json_str(string):
-    string = string.replace("'", '"')
-    string = string.replace('\\xa0', ' ')
-    return json.loads(string)
+    if string:
+        # handle some strings that cannot be parsed with json.loads()
+        string = string.replace("'", '"')
+        string = string.replace('\\x', '\\u00')
+        string = string.replace('"profile_path": None', '"profile_path": ""')
+        return json.loads(string)
+    return {}
 
 
 def _create_id_from_feature(items, feature_name, feature_id_list):
@@ -244,3 +261,11 @@ def _add_production_countries_to_movie(movie_instance, production_country_instan
 
 def _add_spoken_languages_to_movie(movie_instance, spoken_language_instances):
     movie_instance.spoken_languages.extend(spoken_language_instances)
+
+
+def _add_actors_to_movie(movie_instance, actor_instances):
+    movie_instance.actors.extend(actor_instances)
+
+
+def _add_crew_members_to_movie(movie_instance, crew_member_instances):
+    movie_instance.crew_members.extend(crew_member_instances)
