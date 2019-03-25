@@ -119,3 +119,11 @@ class MovieLensDS(object):
         self.items.to_pickle(items_path)
         self.users.to_pickle(users_path)
         self.ratings.to_pickle(ratings_path)
+
+    def get_ratings_split(self, train_size=0.8):
+        user_cutoff = int(len(self.users) * train_size)
+        user_training = self.users[:user_cutoff]['user_id']
+        user_testing = self.users[user_cutoff:]['user_id']
+        ratings_training = self.ratings[self.ratings.user_id.isin(user_training)]
+        ratings_testing = self.ratings[self.ratings.user_id.isin(user_testing)]
+        return ratings_training, ratings_testing
