@@ -1,8 +1,9 @@
 import os
 from datetime import datetime
 
-import main
 import pandas as pd
+
+import main
 from ratings.database import engine
 
 
