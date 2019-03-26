@@ -1,15 +1,16 @@
-import numpy as np
-import pandas as pd
+from .common import Recommender
 
 
-class MostPopular(object):
+class MostPopular(Recommender):
+    _popularities = []  # list for storing recommendation so they don't have to be recomputed.
 
     def __init__(self, dataset, train_size=0.8, alpha=0):
-        self.dataset = dataset
-        self.train_size = 0.8
+        Recommender.__init__(self, dataset, train_size)
         self.alpha = alpha
 
-    def compute_popularity(self, ratings=None):
+    def compute_popularity(self, ratings=None, recompute=False):
+        if self._popularities and not recompute:
+            return self._popularities
         if ratings is None:
             ratings, _ = self.dataset.get_ratings_split(self.train_size)
         item_r_sum = {}
@@ -32,50 +33,8 @@ class MostPopular(object):
                 (id, (avg_rating * item['count'] + overall_avg_rating * self.alpha) / (item['count'] + self.alpha)))
 
         popularities.sort(key=lambda x: x[1], reverse=True)
+        self._popularities = popularities
         return popularities
 
-    def top_n(self, n, ratings=None):
+    def top_n(self, n, user=None, ratings=None):
         return self.compute_popularity(ratings)[:n]
-
-    def user_average_ratings(self, dataframe):
-        user_average_ratings = pd.DataFrame(data=None, columns=['user_id', 'rating'])
-
-        for id in dataframe.user_id.unique():
-            elements = dataframe[dataframe.user_id == id].rating
-            size = elements.shape[0]
-            ratings_total = elements.values.sum()
-            user_average_ratings = user_average_ratings.append(
-                pd.Series([id, (ratings_total / size)], index=user_average_ratings.columns), ignore_index=True)
-
-        return user_average_ratings
-
-    def mean_average_precision(self, rating_df, average_rating_df):
-        list_of_ap = []
-        popularities = self.compute_popularity()
-        for user in rating_df.user_id.unique():
-            average_rating = average_rating_df.rating.loc[average_rating_df['user_id'] == user].iloc[0]
-
-            good_recommendations = rating_df.loc[rating_df.user_id == user]
-            good_recommendations = good_recommendations[good_recommendations.rating >= average_rating].movie_id
-
-            n_recommendations_needed = good_recommendations.size
-
-            top_n_recommendations = [x[0] for x in popularities[:n_recommendations_needed]]
-
-            total_recs = 0
-            correct_recs = 0
-            scorelist = []
-            for rec in top_n_recommendations:
-                total_recs += 1
-                if rec in good_recommendations:
-                    scorelist.append(1/total_recs)
-                    correct_recs += 1
-
-            if correct_recs != 0:
-                score = sum(scorelist)/correct_recs
-            else:
-                score = 0
-
-            list_of_ap.append(score)
-
-        return np.mean(list_of_ap)
