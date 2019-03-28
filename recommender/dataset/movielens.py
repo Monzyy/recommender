@@ -100,7 +100,7 @@ class MovieLensDS(object):
             'spoken_languages', 'movie_has_spoken_language', 'spoken_language_id')
         languages.apply(
             lambda x: extend_with_attribute_relation(x, movie_languages, 'spoken_language_id', 'iso_639_1'), axis=1)
-        print(f'production_countries done. Took {datetime.now() - timer}')
+        print(f'spoken_languages done. Took {datetime.now() - timer}')
 
         # Extend with actors
         timer = datetime.now()

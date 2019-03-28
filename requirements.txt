@@ -1,6 +1,8 @@
 SQLAlchemy==1.2.18
 psycopg2==2.7.7
 python-dateutil==2.8.0
+scikit-learn==0.20.3
+pandas==0.24.1
 
 # testing
 flake8==3.7.6
