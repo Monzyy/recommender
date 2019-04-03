@@ -11,21 +11,28 @@ class Recommender(object):
         self.dataset = dataset
         self.train_size = train_size
 
-    def tfidf_cosine_similarities(self, columns=('title', 'original_title', 'summary')):
+    def tfidf_cosine_similarities(self, df, columns=('title', 'original_title', 'summary')):
         """Compute the similarity between items by columns containing text."""
-        items = self.dataset.items
-        texts = items[list(columns)].apply(lambda x: ' '.join(x), axis=1)
+        texts = df[list(columns)].apply(lambda x: ' '.join(x), axis=1)
         vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 3))
         tfidf = vectorizer.fit_transform(texts)
         return cosine_similarity(tfidf, dense_output=True)
 
-    def euclidean_distances_similarities(self, columns=('runtime',)):
+    def euclidean_distances_similarities(self, df, columns=('runtime',)):
         """Compute the similarity between items by specified columns containing continuous data."""
-        features = self.dataset.items[list(columns)]
+        features = df[list(columns)]
         features = features.fillna(0)
         distance_matrix = pairwise_distances(features)
         normalized_dist_matrix = normalize(distance_matrix, norm='max')
         return 1 - normalized_dist_matrix
+
+    def jaccard_similarities(self, df, columns=(), n_jobs=4):
+        features = df
+        if columns:
+            features = features[list(columns)]
+        jaccard_sim_matrix = pairwise_distances(features, metric='jaccard', n_jobs=n_jobs)
+        return 1 - jaccard_sim_matrix
+
 
     def combine_similarity_matrices(self, sim_matrices, weights=None):
         """Combine similarity matrices into one similarity matrix."""
@@ -56,7 +63,7 @@ class Recommender(object):
 
             n_recommendations_needed = good_recommendations.size
 
-            top_n_recommendations = [x[0] for x in self.top_n(n=n_recommendations_needed, user=user)]
+            top_n_recommendations = [x[0] for x in self.top_n(n=10, user=user)]
 
             total_recs = 0
             correct_recs = 0

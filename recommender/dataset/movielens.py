@@ -127,3 +127,7 @@ class MovieLensDS(object):
         ratings_training = self.ratings[self.ratings.user_id.isin(user_training)]
         ratings_testing = self.ratings[self.ratings.user_id.isin(user_testing)]
         return ratings_training, ratings_testing
+
+    def get_bool_columns(self, users_or_items='items'):
+        if users_or_items == 'items':
+            return self.items.loc[:, self.items.dtypes == bool]
