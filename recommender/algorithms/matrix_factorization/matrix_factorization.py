@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class MatrixFactorization: # TODO: it needs to be stochastic, or at least kinda
+class MatrixFactorization:  # TODO: it needs to be stochastic, or at least kinda
 
     def fit(self, ratings: np.ndarray, n_latent_factors: int, steps=5000, alpha=0.0002, beta=0.02):
 
@@ -25,8 +25,10 @@ class MatrixFactorization: # TODO: it needs to be stochastic, or at least kinda
         return P, Q
 
     def _compute_gradients(self, error, P, Q, beta):
-        delta_p = 2*error*P-beta*Q
-        delta_q = 2*error*Q-beta*P
+        # delta_p = 2*error*P-beta*Q
+        # delta_q = 2*error*Q-beta*P
+        delta_p = -2*error*P
+        delta_q = -2*error*Q
 
         return delta_p, delta_q
 
