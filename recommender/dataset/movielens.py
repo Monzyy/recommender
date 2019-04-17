@@ -17,8 +17,8 @@ class MovieLensDS(object):
             if use_ml_1m:  # Only use items present in both Movie Lens 1M and db
                 self.ratings = pd.read_csv(ml_dir_path + os.sep + 'ratings.dat', sep='::', engine='python',
                                            names=['user_id', 'movie_id', 'rating', 'timestamp'])
-                self.users = pd.read_csv(ml_dir_path + os.sep + 'users.dat', sep='::', engine='python',
-                                         names=['user_id', 'gender', 'age', 'occupation', 'zip_code'])
+                self.users = self._extend_users(pd.read_csv(ml_dir_path + os.sep + 'users.dat', sep='::', engine='python',
+                                                         names=['user_id', 'gender', 'age', 'occupation', 'zip_code']))
                 self.movies_ml = pd.read_csv(ml_dir_path + os.sep + 'movies.dat', sep='::', engine='python',
                                              names=['movie_id', 'title', 'genre'], usecols=['movie_id'])
                 self.items = self.movies_ml.merge(self.items, how='inner', on='movie_id')
@@ -131,3 +131,15 @@ class MovieLensDS(object):
     def get_bool_columns(self, users_or_items='items'):
         if users_or_items == 'items':
             return self.items.loc[:, self.items.dtypes == bool]
+
+    #not used atm
+    _extended_users_columns = ['user_id','male', 'female', 'Under 18', '18-24', '25-34', '35-44', '45-49', '50-55', '56+',
+                               'other or not specified', 'academic/educator','artist', 'clerical/admin',
+                               'college/grad student', 'customer service', 'doctor/health care', 'executive/managerial',
+                               'farmer', 'homemaker', 'K-12 student', 'lawyer', 'programmer', 'retired',
+                               'sales/marketing', 'scientist', 'self-employed', 'technician/engineer',
+                               'tradesman/craftsman', 'unemployed', 'writer']
+
+    def _extend_users(self, users):
+        return pd.get_dummies(users, prefix=['gender', 'age', 'occupation'], columns=['gender', 'age', 'occupation'])
+
